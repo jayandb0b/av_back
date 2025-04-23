@@ -1,0 +1,24 @@
+npx @angular/cli new av-api-app --style=scss --routing
+cd av-api-app
+ng add @angular/material
+npm install axios
+
+# Generar módulos y componentes
+ng generate module core
+ng generate module shared
+ng generate module members
+ng generate module auth
+
+ng generate component shared/layout
+ng generate component shared/header
+ng generate component shared/sidebar
+
+ng generate component auth/login
+ng generate component auth/refresh-token
+
+ng generate component members/member-list
+ng generate component members/member-detail
+
+# Generar servicios
+ng generate service core/auth
+ng generate service members/member

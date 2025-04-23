@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    url: jdbc:hsqldb:file:./data/asdb;shutdown=true
+    driver-class-name: org.hsqldb.jdbc.JDBCDriver
+    username: sa
+    password:
+  #sql:
+    #init:
+      #mode: always
+      #schema-locations: classpath:schema.sql
+      #data-locations: classpath:data.sql
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.HSQLDialect
+        format_sql: 'true'
+        #ddl-auto: update
+    show-sql: 'true'
+  application:
+    name: as
+  banner:
+    location: classpath:/banner.txt
+  
+  sleuth:
+    otel:
+      enabled: true 
+      config:
+        trace-id-ratio-based: 1.0
+        exporter:
+          otlp:
+            endpoint: http://localhost:4318
+
+server:
+  port: 8080
+  servlet:
+    context-path: /av

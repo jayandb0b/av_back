@@ -1,0 +1,1 @@
+C:\Java\jdk\jdk-17.0.2\bin\java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1043 -javaagent:opentelemetry-javaagent.jar -Dotel.service.name=AV -jar C:\Java\av\AS\target\av-0.0.1-SNAPSHOT.jar

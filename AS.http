@@ -1,0 +1,92 @@
+
+@baseUrl = http://localhost:8080/av
+
+
+# @name login
+POST {{baseUrl}}/users/login HTTP/1.1
+language: EN
+cypher: false
+Content-Type: application/json
+
+{
+    "login": "admin",
+    "password": "UsuarioAdmin1"
+}
+
+
+###
+@authToken = {{login.response.headers.Authorization}}
+
+###
+# @name refresh
+POST {{baseUrl}}/users/refresh HTTP/1.1
+Content-Type: application/json
+
+{
+    "refreshToken": "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlcyI6WyJST0xFX0FETUlOIl0sImlkIjoxLCJzdWIiOiJhZG1pbiIsImlhdCI6MTc0MDEyOTExMSwiZXhwIjoxNzQyNzIxMTExfQ.6f1vyct6lZGw2Ao1loyApMUF8hmWxn5Nt85eBwM6YTI"
+}
+
+###
+
+###
+# @name search member with name 
+GET {{baseUrl}}/member?text=ALBALA&page=0&size=10&sort=surnameName,DESC HTTP/1.1
+Authorization: {{authToken}}
+
+###
+# @name search member
+//GET {{baseUrl}}/member?page=0&size=10&sort=surnameName,DESC HTTP/1.1
+GET http://localhost:8080/av/member?page=0&size=10&sort=surnameName,DESC
+Authorization: {{authToken}}
+
+###
+# @name get member
+GET {{baseUrl}}/member/1 HTTP/1.1
+Authorization: {{authToken}}
+
+
+###
+###
+# @name post member
+POST {{baseUrl}}/member HTTP/1.1
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "id": null,
+  "surnameName": "Albaladejo Vergara, Jose Serfín",
+  "comments": null,
+  "dni": "23015175H",
+  "email": "jalbala@gmail.com",
+  "memberNumber": 1,
+  "active": null,
+  "dateUpdate": null
+}
+
+###
+# @name put member
+PUT {{baseUrl}}/member/1 HTTP/1.1
+Authorization: {{authToken}}
+Content-Type: application/json
+
+{
+  "id": 1,
+  "surnameName": "Albaladejo Vergara, Jose Serafín",
+  "comments": null,
+  "dni": "23015175-H",
+  "email": "jalbala@gmail.com",
+  "memberNumber": 1,
+  "active": "Y",
+  "dateUpdate": null
+}
+
+###
+# @name search member address
+GET {{baseUrl}}/memberAddress?idMember=4
+Authorization: {{authToken}}
+
+
+###
+# @name search member address
+GET {{baseUrl}}/memberPayment?idMember=4
+Authorization: {{authToken}}

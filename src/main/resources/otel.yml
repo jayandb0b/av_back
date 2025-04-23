@@ -1,0 +1,27 @@
+#otel:
+#  service.name: AV
+#  resource.attributes:
+#    service.namespace: AV
+#    environment: production
+#
+#  exporter:
+#    otlp:
+#      endpoint: http://localhost:4317
+#      compression: gzip
+#      timeout: 10s
+#
+#  propagators:
+#    - tracecontext
+#    - baggage
+#
+#  metrics:
+#    exporter:
+#      otlp:
+#        endpoint: http://localhost:4317
+#        # Otras configuraciones para métricas
+#  
+#  # Configuración adicional para logs (opcional)
+#  logs:
+#    exporter:
+#      otlp:
+#        endpoint: http://localhost:4317
