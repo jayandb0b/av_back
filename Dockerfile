@@ -1,5 +1,5 @@
 # --- Etapa de Construcción ---
-FROM shenlw/maven:3.9-jdk-17 AS builder  # Cambia la etiqueta aquí
+FROM maven:3.9.5-jdk-17 AS builder
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
@@ -8,7 +8,7 @@ COPY src ./src
 RUN mvn dependency:go-offline
 
 # Construye la aplicación
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -DfinalName=av
 
 # --- Etapa de Descarga del Agente de OpenTelemetry ---
 FROM alpine/curl:latest AS otel_agent_downloader
@@ -23,9 +23,9 @@ FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
 # Copia el archivo JAR de la etapa de construcción
-COPY --from=builder /app/target/*.jar av.jar
+COPY --from=builder /app/target/av.jar av.jar
 
-# Copia el agente de OpenTelemetry
+# Copia el agente de OpenTelemetry (si lo usas)
 COPY --from=otel_agent_downloader /otel-agent/opentelemetry-javaagent.jar /app/opentelemetry-javaagent.jar
 
 # Define el usuario para ejecutar la aplicación (por seguridad)
@@ -38,14 +38,14 @@ EXPOSE 8080
 
 # Define variables de entorno para OpenTelemetry y Java
 ENV JAVA_OPTS="-javaagent:/app/opentelemetry-javaagent.jar \
-               -Dotel.exporter.otlp.endpoint=otel-collector:4317 \
+               -Dotel.exporter.otlp.endpoint=http://<tu-colector-otel>:4317 \
                -Dotel.service.name=av \
                -Dotel.exporter.otlp.metrics.protocol=grpc \
                -Dotel.exporter.otlp.traces.protocol=grpc \
                -Xms512m -Xmx1024m"
 
-# Comando para ejecutar la aplicación
+# Comando para ejecutar la aplicación Spring Boot
 ENTRYPOINT ["java", "$JAVA_OPTS", "-jar", "av.jar"]
 
-# Define un health check
+# Define un health check (recomendado para Northflank)
 HEALTHCHECK --interval=5m --timeout=3s CMD curl -f http://localhost:8080/actuator/health || exit 1
