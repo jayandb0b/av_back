@@ -1,49 +1,34 @@
-# --- Etapa de Construcción ---
-FROM maven:3.9.5-jdk-17 AS builder
+# Etapa 1: build con Maven
+FROM maven:3.9.5-eclipse-temurin-17 AS builder
+
 WORKDIR /app
+
+# Copiamos dependencias primero para aprovechar el cache de Docker
 COPY pom.xml .
 COPY src ./src
 
-# Descarga las dependencias (aprovechando la capa de Docker para caché)
-RUN mvn dependency:go-offline
-
-# Construye la aplicación
+# Empaquetamos la aplicación
 RUN mvn clean package -DskipTests
 
-# --- Etapa de Descarga del Agente de OpenTelemetry ---
-FROM alpine/curl:latest AS otel_agent_downloader
-ARG OTEL_AGENT_VERSION=1.36.0  # Define la versión del agente
-WORKDIR /otel-agent
-RUN curl -L https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v${OTEL_AGENT_VERSION}/opentelemetry-javaagent.jar -o opentelemetry-javaagent.jar
+# Etapa 2: imagen final con JRE y OpenTelemetry
+FROM eclipse-temurin:17-jre-alpine
 
-# --- Etapa de Ejecución ---
-FROM eclipse-temurin:17-jre-jammy
-
-# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia el archivo JAR de la etapa de construcción
-COPY --from=builder /app/target/*.jar av.jar  # Asumiendo que el JAR final se llama av.jar
+# Copia el .jar generado desde el builder
+COPY --from=builder /app/target/av-*.jar app.jar
 
-# Copia el agente de OpenTelemetry
-COPY --from=otel_agent_downloader /otel-agent/opentelemetry-javaagent.jar /app/opentelemetry-javaagent.jar
+# Copia el agente de OpenTelemetry (si lo usas como agente externo)
+ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar /otel/opentelemetry-javaagent.jar
 
-# Define el usuario para ejecutar la aplicación (por seguridad)
-RUN addgroup --system spring && adduser --system --group spring spring
-
-USER spring:spring
-
-# Expone el puerto
+# Puerto en el que corre tu app
 EXPOSE 8080
 
-# Define variables de entorno para OpenTelemetry y Java
-ENV JAVA_OPTS="-javaagent:/app/opentelemetry-javaagent.jar \
-               -Dotel.exporter.otlp.endpoint=http://localhost:4317 \
-               -Dotel.service.name=av \
-               -Xms512m -Xmx1024m"
+# Variables de entorno básicas de OpenTelemetry (puedes extenderlas en Northflank)
+ENV OTEL_SERVICE_NAME=av-service \
+    OTEL_TRACES_EXPORTER=otlp \
+    OTEL_METRICS_EXPORTER=none \
+    OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 
-# Comando para ejecutar la aplicación
-ENTRYPOINT ["java", "$JAVA_OPTS", "-jar", "av.jar"]
-
-# Define un health check
-HEALTHCHECK --interval=5m --timeout=3s CMD curl -f http://localhost:8080/actuator/health || exit 1
+# Comando de inicio con el agente
+ENTRYPOINT ["java", "-javaagent:/otel/opentelemetry-javaagent.jar", "-jar", "app.jar"]
