@@ -1,34 +1,34 @@
-# Etapa 1: build con Maven
+# Etapa 1: Build de la app con Maven y Java 17
 FROM maven:3.9.5-eclipse-temurin-17 AS builder
 
 WORKDIR /app
 
-# Copiamos dependencias primero para aprovechar el cache de Docker
+# Cache de dependencias
 COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Código fuente
 COPY src ./src
 
-# Empaquetamos la aplicación
+# Build sin tests
 RUN mvn clean package -DskipTests
 
-# Etapa 2: imagen final con JRE y OpenTelemetry
+# Etapa 2: Imagen final solo con JRE y el jar
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-# Copia el .jar generado desde el builder
+# Copiamos el .jar generado por Maven
 COPY --from=builder /app/target/av-*.jar app.jar
 
-# Copia el agente de OpenTelemetry (si lo usas como agente externo)
-ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar /otel/opentelemetry-javaagent.jar
-
-# Puerto en el que corre tu app
+# Puerto expuesto (Spring Boot por defecto)
 EXPOSE 8080
 
-# Variables de entorno básicas de OpenTelemetry (puedes extenderlas en Northflank)
+# Variables para OTEL, puedes configurarlas también desde Northflank
 ENV OTEL_SERVICE_NAME=av-service \
     OTEL_TRACES_EXPORTER=otlp \
     OTEL_METRICS_EXPORTER=none \
     OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 
-# Comando de inicio con el agente
-ENTRYPOINT ["java", "-javaagent:/otel/opentelemetry-javaagent.jar", "-jar", "app.jar"]
+# Comando de ejecución
+ENTRYPOINT ["java", "-jar", "app.jar"]
