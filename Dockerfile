@@ -1,5 +1,5 @@
 # --- Etapa de Construcción ---
-FROM maven:3.9.5-jdk-17 AS builder
+FROM maven:3.9-jdk-17 AS builder  # Cambia la etiqueta aquí
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
@@ -23,7 +23,7 @@ FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
 # Copia el archivo JAR de la etapa de construcción
-COPY --from=builder /app/target/*.jar av.jar  # Asumiendo que el JAR final se llama av.jar
+COPY --from=builder /app/target/*.jar av.jar
 
 # Copia el agente de OpenTelemetry
 COPY --from=otel_agent_downloader /otel-agent/opentelemetry-javaagent.jar /app/opentelemetry-javaagent.jar
@@ -38,8 +38,10 @@ EXPOSE 8080
 
 # Define variables de entorno para OpenTelemetry y Java
 ENV JAVA_OPTS="-javaagent:/app/opentelemetry-javaagent.jar \
-               -Dotel.exporter.otlp.endpoint=http://localhost:4317 \
+               -Dotel.exporter.otlp.endpoint=otel-collector:4317 \
                -Dotel.service.name=av \
+               -Dotel.exporter.otlp.metrics.protocol=grpc \
+               -Dotel.exporter.otlp.traces.protocol=grpc \
                -Xms512m -Xmx1024m"
 
 # Comando para ejecutar la aplicación
