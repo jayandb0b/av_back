@@ -1,5 +1,5 @@
 # --- Etapa de Construcción ---
-FROM maven:3.9-jdk-17 AS builder  # Cambia la etiqueta aquí
+FROM shenlw/maven:3.9-jdk-17 AS builder  # Cambia la etiqueta aquí
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
